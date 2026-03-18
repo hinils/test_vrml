@@ -28,6 +28,22 @@ private:
     std::shared_ptr<Scene> scene_;
     std::unordered_map<std::string, std::shared_ptr<IndexedFaceSet>> defMeshMap_;
     std::unordered_map<std::string, Material> defMaterialMap_;
+    std::vector<Mat4> transformStack_;  // Transform hierarchy stack
+
+    Mat4 currentTransform() const {
+        return transformStack_.empty() ? Mat4::identity() : transformStack_.back();
+    }
+
+    void pushTransform(const Mat4& m) {
+        if (transformStack_.empty())
+            transformStack_.push_back(m);
+        else
+            transformStack_.push_back(transformStack_.back() * m);
+    }
+
+    void popTransform() {
+        if (!transformStack_.empty()) transformStack_.pop_back();
+    }
 
     // ── Type converters ──────────────────────────────────────────
     static float toFloat(const std::string& s) { return std::stof(s); }
@@ -301,10 +317,36 @@ private:
     void parseGroupNode() {
         if (lex_.peek().type != TokType::LBrace) return;
         lex_.next();
+
+        // Accumulate transform for this node
+        Mat4 localTransform = Mat4::identity();
+        bool hasTransform = false;
+
         while (true) {
             Token t = lex_.peek();
             if (t.type == TokType::RBrace || t.type == TokType::Eof) { lex_.next(); break; }
-            if (t.value == "children") {
+
+            if (t.value == "translation") {
+                lex_.next();
+                float tx = readSFFloat(), ty = readSFFloat(), tz = readSFFloat();
+                localTransform = localTransform * Mat4::translation(tx, ty, tz);
+                hasTransform = true;
+            } else if (t.value == "rotation") {
+                lex_.next();
+                float ax = readSFFloat(), ay = readSFFloat(), az = readSFFloat(), angle = readSFFloat();
+                localTransform = localTransform * Mat4::rotation(ax, ay, az, angle);
+                hasTransform = true;
+            } else if (t.value == "scale") {
+                lex_.next();
+                float sx = readSFFloat(), sy = readSFFloat(), sz = readSFFloat();
+                localTransform = localTransform * Mat4::scale(sx, sy, sz);
+                hasTransform = true;
+            } else if (t.value == "center") {
+                lex_.next(); readSFFloat(); readSFFloat(); readSFFloat(); // TODO: implement properly
+            } else if (t.value == "scaleOrientation") {
+                lex_.next(); readSFFloat(); readSFFloat(); readSFFloat(); readSFFloat(); // TODO
+            } else if (t.value == "children") {
+                if (hasTransform) pushTransform(localTransform);
                 lex_.next();
                 if (lex_.peek().type == TokType::LBracket) {
                     lex_.next();
@@ -318,9 +360,9 @@ private:
                 } else if (lex_.peek().type==TokType::LBrace) {
                     parseNode("");
                 } else {
-                    // Single node without brackets (e.g., "children Shape { ... }")
                     parseNode("");
                 }
+                if (hasTransform) popTransform();
             } else {
                 lex_.next(); skipFieldValue();
             }
@@ -367,6 +409,14 @@ private:
         if (mesh) {
             mesh->material = mat;
             mesh->triangulate();
+
+            // Apply current transform to vertices
+            Mat4 xform = currentTransform();
+            for (auto& v : mesh->vertices) {
+                v.pos = xform.transformPoint(v.pos);
+                v.normal = xform.transformNormal(v.normal);
+            }
+
             scene_->meshes.push_back(mesh);
         }
     }
