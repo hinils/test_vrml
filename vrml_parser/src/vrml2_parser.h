@@ -27,6 +27,7 @@ private:
     Lexer  lex_;
     std::shared_ptr<Scene> scene_;
     std::unordered_map<std::string, std::shared_ptr<IndexedFaceSet>> defMeshMap_;
+    std::unordered_map<std::string, Material> defMaterialMap_;
 
     // ── Type converters ──────────────────────────────────────────
     static float toFloat(const std::string& s) { return std::stof(s); }
@@ -72,7 +73,25 @@ private:
             lex_.next();
             skipNodeBody();
         } else {
-            lex_.next();
+            // Skip single or multiple values until we hit a keyword, brace, or bracket
+            // SF types can be: number, string, or keyword (TRUE/FALSE)
+            // We need to skip until we see something that looks like a field name or structure
+            while (!lex_.atEnd()) {
+                Token p = lex_.peek();
+                // Stop at structural tokens
+                if (p.type == TokType::RBrace || p.type == TokType::RBracket) break;
+                // Stop at keywords that look like field names (start with lowercase) or node types
+                if (p.type == TokType::Word) {
+                    // Check if this looks like a field name (lowercase start) or node type (uppercase start)
+                    if (!p.value.empty() && std::islower((unsigned char)p.value[0])) break;
+                    // Node types like Transform, Shape, etc. - also stop
+                    if (p.value == "Transform" || p.value == "Shape" || p.value == "Group" ||
+                        p.value == "DEF" || p.value == "USE" || p.value == "Appearance" ||
+                        p.value == "Material" || p.value == "IndexedFaceSet" || p.value == "Coordinate" ||
+                        p.value == "Normal" || p.value == "Color" || p.value == "TextureCoordinate") break;
+                }
+                lex_.next();
+            }
         }
     }
 
@@ -321,10 +340,22 @@ private:
             lex_.next();
             if (t.value == "appearance") {
                 Token ap = lex_.peek();
-                if (ap.value=="Appearance"||ap.value=="DEF") {
-                    if (ap.value=="DEF"){lex_.next();lex_.next();}
-                    else lex_.next();
-                    mat = parseAppearance();
+                if (ap.value == "USE") {
+                    lex_.next(); // consume USE
+                    Token name = lex_.next(); // get name
+                    auto it = defMaterialMap_.find(name.value);
+                    if (it != defMaterialMap_.end()) mat = it->second;
+                } else if (ap.value=="Appearance"||ap.value=="DEF") {
+                    std::string appDef;
+                    if (ap.value=="DEF"){
+                        lex_.next(); // consume DEF
+                        appDef=lex_.next().value; // get name
+                        // Skip the Appearance keyword if present
+                        if (lex_.peek().value=="Appearance") lex_.next();
+                    } else {
+                        lex_.next(); // consume Appearance
+                    }
+                    mat = parseAppearance(appDef);
                 } else { skipFieldValue(); }
             } else if (t.value == "geometry") {
                 mesh = parseGeometryField(defName);
@@ -341,7 +372,7 @@ private:
     }
 
     // Parse appearance { material Material { ... } }
-    Material parseAppearance() {
+    Material parseAppearance(const std::string& defName = "") {
         Material mat;
         if (lex_.peek().type != TokType::LBrace) return mat;
         lex_.next();
@@ -351,17 +382,30 @@ private:
             lex_.next();
             if (t.value == "material") {
                 Token mt = lex_.peek();
-                if (mt.value=="Material"||mt.value=="DEF") {
-                    if (mt.value=="DEF"){lex_.next();lex_.next();}
-                    else lex_.next();
-                    mat = parseMaterial();
+                if (mt.value == "USE") {
+                    lex_.next(); // consume USE
+                    Token name = lex_.next(); // get name
+                    auto it = defMaterialMap_.find(name.value);
+                    if (it != defMaterialMap_.end()) mat = it->second;
+                } else if (mt.value=="Material"||mt.value=="DEF") {
+                    std::string matDef;
+                    if (mt.value=="DEF"){
+                        lex_.next(); // consume DEF
+                        matDef=lex_.next().value; // get name
+                        // Skip the Material keyword if present
+                        if (lex_.peek().value=="Material") lex_.next();
+                    } else {
+                        lex_.next(); // consume Material
+                    }
+                    mat = parseMaterial(matDef);
                 } else { skipFieldValue(); }
             } else { skipFieldValue(); }
         }
+        if (!defName.empty()) defMaterialMap_[defName] = mat;
         return mat;
     }
 
-    Material parseMaterial() {
+    Material parseMaterial(const std::string& defName = "") {
         Material mat;
         if (lex_.peek().type != TokType::LBrace) return mat;
         lex_.next();
@@ -377,6 +421,7 @@ private:
             else if (t.value=="transparency")    {auto f=readMFFloat();if(!f.empty())mat.transparency=f[0];}
             else skipFieldValue();
         }
+        if (!defName.empty()) defMaterialMap_[defName] = mat;
         return mat;
     }
 
