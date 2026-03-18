@@ -1,0 +1,35 @@
+#VRML V2.0 utf8
+# Simple cube - VRML 2.0 format
+
+Shape {
+    appearance Appearance {
+        material Material {
+            diffuseColor 0.7 0.5 0.3
+            specularColor 0.2 0.2 0.2
+            shininess 0.5
+        }
+    }
+    geometry IndexedFaceSet {
+        coord Coordinate {
+            point [
+                -1.0 -1.0  1.0,
+                 1.0 -1.0  1.0,
+                 1.0  1.0  1.0,
+                -1.0  1.0  1.0,
+                -1.0 -1.0 -1.0,
+                 1.0 -1.0 -1.0,
+                 1.0  1.0 -1.0,
+                -1.0  1.0 -1.0,
+            ]
+        }
+        coordIndex [
+            0, 1, 2, 3, -1,  # Front face
+            4, 7, 6, 5, -1,  # Back face
+            0, 4, 5, 1, -1,  # Bottom face
+            2, 6, 7, 3, -1,  # Top face
+            0, 3, 7, 4, -1,  # Left face
+            1, 5, 6, 2, -1,  # Right face
+        ]
+        solid FALSE
+    }
+}

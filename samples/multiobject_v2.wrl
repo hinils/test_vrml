@@ -1,0 +1,103 @@
+#VRML V2.0 utf8
+# Sample: Three objects – demonstrates multiple meshes, DEF/USE, per-face colors
+
+Group {
+  children [
+
+    # ── Ground plane ──────────────────────────────────────────
+    Shape {
+      appearance Appearance {
+        material Material {
+          diffuseColor     0.25 0.55 0.25
+          ambientIntensity 0.4
+          shininess        0.05
+        }
+      }
+      geometry IndexedFaceSet {
+        coord Coordinate {
+          point [ -4 0 -4,  4 0 -4,  4 0  4,  -4 0  4 ]
+        }
+        coordIndex [ 0 1 2 3 -1 ]
+        solid TRUE
+      }
+    }
+
+    # ── Left box (per-face colors) ────────────────────────────
+    Shape {
+      appearance Appearance {
+        material Material { shininess 0.2 ambientIntensity 0.3 }
+      }
+      geometry DEF MYBOX IndexedFaceSet {
+        coord Coordinate {
+          point [
+            -2.8 0.0 -0.5,  -1.2 0.0 -0.5,  -1.2 1.6 -0.5,  -2.8 1.6 -0.5,
+            -2.8 0.0  0.5,  -1.2 0.0  0.5,  -1.2 1.6  0.5,  -2.8 1.6  0.5
+          ]
+        }
+        coordIndex [
+          0 3 2 1 -1
+          4 5 6 7 -1
+          0 1 5 4 -1
+          2 3 7 6 -1
+          0 4 7 3 -1
+          1 2 6 5 -1
+        ]
+        color Color {
+          color [
+            0.9 0.2 0.2,
+            0.2 0.9 0.2,
+            0.2 0.2 0.9,
+            0.9 0.9 0.2,
+            0.9 0.2 0.9,
+            0.2 0.9 0.9
+          ]
+        }
+        colorPerVertex FALSE
+        solid TRUE
+        creaseAngle 0.0
+      }
+    }
+
+    # ── Center octahedron ─────────────────────────────────────
+    Shape {
+      appearance Appearance {
+        material Material {
+          diffuseColor  0.8 0.6 0.1
+          specularColor 1.0 0.9 0.5
+          shininess     0.7
+          ambientIntensity 0.2
+        }
+      }
+      geometry IndexedFaceSet {
+        coord Coordinate {
+          point [
+             0.0  1.0  0.0,
+             1.0  0.0  0.0,
+             0.0  0.0  1.0,
+            -1.0  0.0  0.0,
+             0.0  0.0 -1.0,
+             0.0 -1.0  0.0
+          ]
+        }
+        coordIndex [
+          0 1 2 -1   0 2 3 -1   0 3 4 -1   0 4 1 -1
+          5 2 1 -1   5 3 2 -1   5 4 3 -1   5 1 4 -1
+        ]
+        solid FALSE
+        creaseAngle 0.0
+      }
+    }
+
+    # ── Right: reuse box geometry via USE ─────────────────────
+    Shape {
+      appearance Appearance {
+        material Material {
+          diffuseColor  0.5 0.3 0.8
+          shininess 0.4
+        }
+      }
+      geometry USE MYBOX
+    }
+
+  ]
+}

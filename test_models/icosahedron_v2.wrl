@@ -1,0 +1,55 @@
+#VRML V2.0 utf8
+# Icosahedron - VRML 2.0 format
+# A regular icosahedron has 12 vertices and 20 triangular faces
+
+Shape {
+    appearance Appearance {
+        material Material {
+            diffuseColor 0.3 0.6 0.9
+            specularColor 0.8 0.8 0.8
+            shininess 0.6
+        }
+    }
+    geometry IndexedFaceSet {
+        coord Coordinate {
+            point [
+                # Golden ratio
+                0.0  1.0  1.618,    # 0
+                0.0 -1.0  1.618,    # 1
+                0.0  1.0 -1.618,    # 2
+                0.0 -1.0 -1.618,    # 3
+                 1.618  0.0  1.0,   # 4
+                -1.618  0.0  1.0,   # 5
+                 1.618  0.0 -1.0,   # 6
+                -1.618  0.0 -1.0,   # 7
+                 1.0  1.618  0.0,   # 8
+                -1.0  1.618  0.0,   # 9
+                 1.0 -1.618  0.0,   # 10
+                -1.0 -1.618  0.0,   # 11
+            ]
+        }
+        coordIndex [
+            0, 1, 4, -1,
+            0, 4, 8, -1,
+            0, 8, 9, -1,
+            0, 9, 5, -1,
+            0, 5, 1, -1,
+            1, 10, 4, -1,
+            4, 10, 6, -1,
+            4, 6, 8, -1,
+            8, 6, 2, -1,
+            8, 2, 9, -1,
+            9, 2, 7, -1,
+            9, 7, 5, -1,
+            5, 7, 11, -1,
+            5, 11, 1, -1,
+            1, 11, 10, -1,
+            3, 6, 10, -1,
+            3, 10, 11, -1,
+            3, 11, 7, -1,
+            3, 7, 2, -1,
+            3, 2, 6, -1,
+        ]
+        solid FALSE
+    }
+}
